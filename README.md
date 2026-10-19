@@ -1,5 +1,5 @@
-# Cell Growth Model
-This project predict and analyze the specific growth rate of cell cultures based on four key environmental factors: temperature, pH, glucose, and lactate. It solves the challenge of bioprocess optimization by rigorously training and comparing polynomial and k-Nearest Neighbors models. Furthermore, it integrates cross-validation, learning curves, and a strict reliability domain mechanism to prevent dangerous extrapolations, ensuring safe and actionable insights for biological research  
+# Cell Growth Prediction Model
+Understanding and anticipating cell culture growth is essential for running a bioprocess. This project explores how four environmental conditions :temperature, pH, glucose and lactate shape the specific growth rate. Its goal is to optimise bioprocesses by training and comparing polynomial and k-nearest neighbours models, while checking how reliable the predictions are. Cross-validation, learning curves and a reliability domain are used throughout to avoid unsafe extrapolations and keep the conclusions applicable to biological work.
 
 ## Highlights
 * Developed an end-to-end regression workflow for bioprocess data
@@ -16,7 +16,7 @@ This project predict and analyze the specific growth rate of cell cultures based
 * scikit-learn 1.9.0
 
 ## Code Design
-The project runs end to end in order, and each step writes its results (numbers, tables) to the figures/ and tables/ folders. The main.py script only contains the sequence of steps: file paths, column names, random seeds and hyperparameter ranges are centralised in src/constants.py, while the logic of each step lives in src/functions.py. Keeping parameters separate from logic is practical: to try a different search range, you only need to edit one file, without touching the function code.
+The project runs end to end in order, and each step writes its results (numbers, tables) to the figures and tables folders. The 'main.py' script only contains the sequence of steps: file paths, column names, random seeds and hyperparameter ranges are centralised in src/constants.py, while the logic of each step lives in src/functions.py. Keeping parameters separate from logic is practical: to try a different search range, you only need to edit one file, without touching the function code.
 
 ### Data loading and validation
 The workflow starts by reading the CSV file and running a check: the five expected columns must exist and no value must be missing. The validated table becomes the single source of data for all following steps, which avoids re-reading the file in several places and risking inconsistencies.
@@ -52,6 +52,7 @@ Finally, the program scans a four-dimensional grid of conditions to identify the
 ## Analysis
 ### Dataset Characteristics
 The dataset contains 318 simulated experiments with no missing values. Growth rates range from 0 to 0.75 d⁻¹ (mean 0.283 d⁻¹); 24 samples (7.5 %) have exactly zero growth and 4 sit at exactly 0.75 d⁻¹, which suggests a floor and a ceiling in the measurements. The four factors are essentially uncorrelated with one another (largest |r| = 0.073), so their effects can be separated cleanly. Pearson correlations with growth are modest: lactate −0.29, glucose +0.18, temperature −0.12, and pH +0.01. The near-zero value for pH does not mean pH is unimportant. A linear correlation cannot detect an optimum, and the binned means below show growth peaking around pH 7 and dropping toward both pH extremes, while for temperature the clearest signal is a lower growth rate in the hottest samples (above about 39 °C).
+
 ![figure_growth_vs_features.png](figures/figure_growth_vs_features.png)
 
 ### Choice of Model Architecture
@@ -73,6 +74,7 @@ Table 1. Training and validation error for polynomial degrees 1 to 6
 |10    |0.0145    |59.7274   |13.7556      |0.9922  |-113868.3134|
 
 As Table 1 shows, training error keeps falling as the degree rises, but validation error is lowest at degree 2 (0.1542 d⁻¹) and then worsens: degree 3 is already worse and less stable (0.1645 ± 0.0180), and degrees 5 and 6 are disastrous. At degree 6 the model has 209 terms, more than the roughly 190 training samples in each fold, so it interpolates the training data perfectly (training RMSE of 0) and fails completely on new data. This is the typical signature of overfitting, and the widening gap between training and validation error is visible in the validation curve.
+
 ![figure_validation_curve_poly.png](figures/figure_validation_curve_poly.png)
 
 ### Comparison with Alternatives
@@ -90,19 +92,23 @@ Table 2. Comparison of all candidate models
 |kNN (distance) |k = 9, weights = distance|0.1515    |0.0112       |0.0       |0.1587   |0.1341  |0.3707 |
 
 The linear model underfits: its training and validation errors are nearly equal (0.172 and 0.174) but both are high, and its test R² is only 0.09. The curvature captured by degree 2 lowers validation RMSE by about 11 % relative to the linear model. The k-NN models reach the same accuracy range. The best k is 9 for both weightings, with validation RMSE of 0.1533 (uniform) and 0.1515 (distance). Distance weighting gives a training RMSE of exactly 0, because each training sample is its own nearest neighbor at distance zero and is reproduced perfectly, so it memorizes the noise in the training data even though its validation error is similar.
+
 ![figure_validation_curve_knn.png](figures/figure_validation_curve_knn.png)
 
 The difference between the best k-NN model and the polynomial (0.0027 d⁻¹) is far smaller than the fold-to-fold standard deviation (about 0.010 d⁻¹), and on the test set the polynomial is actually slightly better (0.1570 versus 0.1587 d⁻¹). The two families are therefore statistically indistinguishable in accuracy, and the choice rests on other properties. The polynomial is described by 15 interpretable numbers, produces smooth predictions, and can be inspected for optima and interactions. The k-NN model must store all samples, produces staircase-like surfaces, and cannot predict outside the range of growth rates it has seen. Because the accuracy is equivalent, the simpler and more interpretable polynomial was selected. The polynomial and k-NN models cut the test RMSE by only about 22 to 24 % relative to the mean baseline (0.2068 d⁻¹), which indicates a large amount of variability that none of the four measured factors explains.
 
 ### Learning Curve
 The learning curve repeats the whole tuning procedure on subsets of 60 to 318 samples.
+
 ![figure_learning_curve.png](figures/figure_learning_curve.png)
 
 With only 48 training samples the polynomial test RMSE is 0.256 d⁻¹, because there is too little data to estimate the curvature reliably. From about 140 training samples onward it settles at roughly 0.14 to 0.17 d⁻¹, and the polynomial then consistently uses degree 2. The k-NN test RMSE stays between 0.13 and 0.18 d⁻¹ (its lowest value, at 48 samples, comes from a test set of only 12 samples), while its training RMSE is 0 in almost every case. Both curves roughly level off, so collecting more of the same kind of data is unlikely to improve accuracy much; adding new factors or reducing measurement noise would probably help more. The curves are noisy, since each point uses a different random subset and a different small test split (the bump at 208 samples is an example), so only their overall trend should be trusted.
 
 ### Model Performance and Residuals
 On the 64 held-out samples the selected model reaches an RMSE of 0.157 d⁻¹, a mean absolute error of 0.131 d⁻¹, and an R² of 0.384. About 42 % of test predictions fall within ±0.1 d⁻¹ of the measurement and 77 % within ±0.2 d⁻¹. The cross-validated R² (0.283) is lower than the test R², and with only 64 test samples both values are uncertain, so a realistic expectation is an R² between roughly 0.3 and 0.4.
+
 ![figure_parity.png](figures/figure_parity.png)
+
 ![figure_residuals.png](figures/figure_residuals.png)
 
 The errors are not purely random. Predictions are pulled toward the mean: in out-of-fold predictions, samples with measured growth above 0.5 d⁻¹ are underestimated by 0.20 d⁻¹ on average, while samples below 0.1 d⁻¹ are overestimated by 0.16 d⁻¹. This is expected when the inputs explain only part of the variance. The residual spread is also larger where growth is high (about 0.16 d⁻¹ for the upper half of predictions versus about 0.14 d⁻¹ for the lower half). The model should therefore be used to rank conditions and estimate trends, not to predict an individual culture precisely.
@@ -130,8 +136,11 @@ Table 3. Largest weights of the selected polynomial model with standardized inpu
 |[Glucose]^2              |-0.0002|
 
 The intercept (0.363 d⁻¹) is the predicted growth rate at average conditions, and every other term modifies it. The largest weight is the squared pH term, which indicates a strong optimum in pH. With the other factors at their means, predicted growth peaks at pH 6.97 (0.364 d⁻¹) and falls to zero below about pH 6.2 and above about pH 7.8, so pH has the largest effect of the four factors.
+
 ![figure_one_factor_effects.png](figures/figure_one_factor_effects.png)
+
 Temperature has a moderate optimum at about 36.1 °C (0.367 d⁻¹), falling to about 0.15 d⁻¹ at both 30 °C and 42 °C. Lactate is inhibitory: growth falls from 0.49 d⁻¹ at 0 mM to 0.28 d⁻¹ at 40 mM, with the steepest drop below about 20 mM. Glucose is beneficial, rising from 0.31 d⁻¹ at 0 mM to 0.45 d⁻¹ at 40 mM, but this is the smallest of the four effects. The negative glucose–lactate weight shows that the factors interact: raising glucose from 0 to 40 mM increases growth by 0.29 d⁻¹ when lactate is absent, by 0.10 d⁻¹ when lactate is 20 mM, and slightly decreases it at 40 mM. The last result is an artifact of the quadratic surface in a sparsely sampled region and should not be interpreted biologically. The temperature–pH weight is also negative, so the best pH decreases somewhat as the temperature rises. The k-NN curves follow the same shapes, which confirms that the polynomial captured real structure and not an artifact of its form.
+
 ![figure_interaction_maps.png](figures/figure_interaction_maps.png)
 
 ### Operating Conditions and Reliability
