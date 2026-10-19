@@ -1,0 +1,5 @@
+Feature,RMSE increase,Std
+pH,0.0432,0.0072
+Lactate [mM],0.0192,0.0085
+Temperature [C],0.0133,0.0033
+Glucose [mM],0.0077,0.0059

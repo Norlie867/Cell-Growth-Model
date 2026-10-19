@@ -1,0 +1,6 @@
+,Specific Growth Rate [d^-1],Temperature [C],pH,Glucose [mM],Lactate [mM]
+Specific Growth Rate [d^-1],1.0,-0.115,0.013,0.18,-0.291
+Temperature [C],-0.115,1.0,0.006,-0.025,0.073
+pH,0.013,0.006,1.0,0.044,-0.024
+Glucose [mM],0.18,-0.025,0.044,1.0,0.057
+Lactate [mM],-0.291,0.073,-0.024,0.057,1.0

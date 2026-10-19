@@ -1,0 +1,6 @@
+Model,Hyperparameters,Valid RMSE,Valid RMSE SD,Train RMSE,Test RMSE,Test MAE,Test R2
+Baseline (mean),none,0.1838,0.0118,0.1835,0.2068,0.1707,-0.0686
+Linear,degree = 1,0.1739,0.008,0.172,0.1907,0.1643,0.0917
+Polynomial,degree = 2,0.1542,0.0104,0.1414,0.157,0.1309,0.3841
+kNN (uniform),"k = 9, weights = uniform",0.1533,0.0113,0.1418,0.1621,0.1363,0.3434
+kNN (distance),"k = 9, weights = distance",0.1515,0.0112,0.0,0.1587,0.1341,0.3707

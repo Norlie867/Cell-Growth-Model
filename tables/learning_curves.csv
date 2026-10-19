@@ -1,0 +1,19 @@
+Model,N train,Best hyperparameters,Train RMSE,Test RMSE
+Polynomial,51,{'poly__degree': 1},0.1683,0.1686
+k-NN,51,"{'knn__n_neighbors': 7, 'knn__weights': 'distance'}",0.0,0.1587
+Polynomial,76,{'poly__degree': 1},0.1848,0.187
+k-NN,76,"{'knn__n_neighbors': 9, 'knn__weights': 'uniform'}",0.1652,0.1707
+Polynomial,102,{'poly__degree': 1},0.1701,0.1707
+k-NN,102,"{'knn__n_neighbors': 8, 'knn__weights': 'uniform'}",0.1493,0.1661
+Polynomial,127,{'poly__degree': 2},0.1485,0.1569
+k-NN,127,"{'knn__n_neighbors': 5, 'knn__weights': 'uniform'}",0.1402,0.1593
+Polynomial,152,{'poly__degree': 2},0.145,0.1441
+k-NN,152,"{'knn__n_neighbors': 16, 'knn__weights': 'distance'}",0.0,0.1537
+Polynomial,178,{'poly__degree': 2},0.1429,0.1651
+k-NN,178,"{'knn__n_neighbors': 12, 'knn__weights': 'distance'}",0.0,0.1572
+Polynomial,203,{'poly__degree': 2},0.145,0.1513
+k-NN,203,"{'knn__n_neighbors': 10, 'knn__weights': 'distance'}",0.0,0.1557
+Polynomial,229,{'poly__degree': 2},0.1433,0.1444
+k-NN,229,"{'knn__n_neighbors': 23, 'knn__weights': 'distance'}",0.0,0.1504
+Polynomial,254,{'poly__degree': 2},0.1474,0.1455
+k-NN,254,"{'knn__n_neighbors': 13, 'knn__weights': 'distance'}",0.0,0.1461

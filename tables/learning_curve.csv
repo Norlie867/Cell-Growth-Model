@@ -1,0 +1,9 @@
+N train,Poly,Poly train RMSE,Poly test RMSE,kNN,kNN train RMSE,kNN test RMSE
+48,degree = 2,0.1289,0.2558,"k = 3, weights = distance",0.0,0.1311
+80,degree = 1,0.1634,0.1805,"k = 8, weights = distance",0.0,0.1607
+112,degree = 1,0.157,0.183,"k = 9, weights = distance",0.0,0.1691
+144,degree = 2,0.138,0.1453,"k = 16, weights = distance",0.0,0.1556
+176,degree = 2,0.1316,0.1393,"k = 8, weights = distance",0.0,0.1398
+208,degree = 2,0.135,0.1689,"k = 15, weights = distance",0.0,0.181
+240,degree = 2,0.1453,0.1438,"k = 6, weights = uniform",0.1353,0.1634
+254,degree = 2,0.1443,0.1437,"k = 10, weights = distance",0.0,0.1505

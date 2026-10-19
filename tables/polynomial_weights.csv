@@ -1,0 +1,16 @@
+Term,Weight
+Intercept (baseline),0.3631
+[pH]^2,-0.0645
+[Lactate],-0.0615
+[Glucose],0.0318
+[Temperature]^2,-0.0244
+[Temperature],-0.0199
+[Glucose] * [Lactate],-0.0194
+[Temperature] * [pH],-0.0187
+[Lactate]^2,0.0112
+[Temperature] * [Glucose],-0.0111
+[pH],-0.0098
+[Temperature] * [Lactate],-0.007
+[pH] * [Glucose],-0.0056
+[pH] * [Lactate],0.0051
+[Glucose]^2,-0.0002
