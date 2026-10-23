@@ -16,40 +16,48 @@ Understanding and anticipating cell culture growth is essential for running a bi
 * scikit-learn 1.9.0
 
 ## Code Design
-The project is organised as a sequence of steps, and each step saves its outputs (numbers, tables) to the `figures` and `tables` folders. The `main.py` script simply lays out the order of the steps: file paths, column names, random seeds and hyperparameter ranges all live together in `src/constants.py`, while the actual logic of each step is kept in `src/functions.py.` This separation is deliberate and practical: if you want to try a different search range, you only edit one file, without ever touching the function code.
 
-### Data loading and validation
-The workflow starts by reading the CSV file and running a simple check: the five expected columns must exist and no value must be missing. Once validated, the table becomes the single source of data for every following step. This step is necessary because it guarantees that no later step works on incomplete or misnamed data; it contributes to the workflow by providing a reliable, unique base for all analyses.
+Running [`main.py`](main.py) executes the whole study in sequence and saves every result in [`figures/`](figures/) and [`tables/`](tables/). The script only decides the order of the steps. Paths, column names, random seeds, and search ranges live in [`src/constants.py`](src/constants.py), and the code behind each step lives in [`src/functions.py`](src/functions.py), so I can change a search range by editing a single file.
 
-### Exploratory analysis
-The program then summarises each variable (mean, spread, range, number of zeros) and computes the correlation matrix. It also plots histograms and the growth rate against each factor, with, for each factor, the mean growth rate computed in tranches (quantiles) to make the trend visible. This step has three goals: checking that the factors cover a relevant range, spotting possible correlations between factors (which would blur the interpretation later), and seeing whether the relationships are curved. It contributes to the workflow by justifying the choice of models: it is precisely the observed curvature that motivates the use of polynomial and nearest-neighbour models rather than a simple straight line.
+### Data Loading and Validation
 
-### Train / test split
-The data is converted into NumPy arrays and then randomly split: 80% of the samples (254) are used for development and 20% (64) are set aside. The test set is used only once, at the very end, to report the final performance. This split is essential: without it, the measured error would reflect the model's ability to memorise the training data, not to generalise. It contributes to the workflow by ensuring that every decision (tuning, selection) relies only on the training set, and that the reported performance is an honest estimate on conditions never seen before. A fixed random seed ensures the split is identical on every run.
+I start by reading the CSV file and checking that the five expected columns exist and that no value is missing. Catching a misnamed column or an empty cell here is much cheaper than finding out later why a model behaves strangely. The validated table is the only source of data for every other step.
 
-### Candidate models
-Two model families are defined as pipelines. Polynomial regression standardises the four variables, expands them into powers and interaction terms, then fits a linear regression on this extended set. The k-nearest neighbours (k-NN) model standardises the variables and averages the growth rates of the closest training samples. Standardisation is placed inside the pipeline: at each cross-validation fold, scikit-learn refits the scaler only on the training part, so that validation samples never influence the preprocessing — they do not "leak" into training. It also puts temperature (around 30–42 °C) and lactate (0–40 mM) on comparable scales, which matters for distance calculations and makes the polynomial weights comparable with each other. This step contributes to the workflow by providing two pipelines ready to be tuned in the next step.
+### Exploratory Analysis
 
-### Hyperparameter tuning
-Each family has settings that cannot be learned directly from the data: the polynomial degree (1 to 10) and, for k-NN, the number of neighbours (1 to 40) as well as the weighting scheme (uniform or distance-based). A grid search with 4-fold cross-validation is run on the training set: each combination is trained on three folds and evaluated on the fourth using RMSE. The training error is also recorded, because the gap between training and validation error reveals underfitting and overfitting. Separate searches are run for a purely linear model, for the polynomial family, and for each k-NN weighting, so that each alternative is compared with its own best settings. This step contributes to the workflow by producing, for each family, the best set of hyperparameters and its validation error, which will be used directly in the comparison.
+Next I summarize each variable (mean, spread, range, number of zeros), compute the correlation matrix, and plot histograms and growth rate against each factor with binned averages. This tells me whether the factors cover a useful range, whether they are correlated with each other (which would make their effects harder to separate), and whether the relationships are curved. The curvature I saw, especially for pH, is why I test polynomial and neighbor-based models instead of settling for a straight line.
 
-### Model comparison and selection
-The tuned candidates are compared against a baseline that always predicts the mean growth rate; this shows the real share of the error that the models manage to explain. The final choice follows an explicit rule: the model with the lowest RMSE wins, unless the polynomial is within one standard deviation of it, in which case the polynomial is kept because it is simpler and its weights can be read directly. This step is necessary to decide between models whose performance is statistically close. It contributes to the workflow by designating the model that will be evaluated on the test set and then interpreted; stating the rule makes the selection reproducible and prevents the test set from influencing it.
+### Train-Test Split
 
-### Learning curves
-To find out whether more experiments would help, the program repeats the fit on random subsets of increasing size, from 60 samples up to the full dataset. Each subset gets its own train/test split and its own grid search, and training and test errors are recorded for both families. This step is a diagnostic, not a decision: it does not affect model selection. It contributes to the workflow by indicating whether the amount of data is sufficient or, on the contrary, whether collecting more data of the same kind would not add much.
+I convert the data to NumPy arrays and randomly keep 80 % of the samples (254) for development while setting 20 % (64) aside. The held-out samples are used only once, at the end, so the final error reflects conditions the model has never seen instead of memorization. A fixed random seed makes the split identical on every run.
 
-### Evaluation on the test set
-The selected model and its closest alternative are evaluated on the held-out data with RMSE, mean absolute error and R². The results are shown in a measured-vs-predicted plot and a residual plot. Negative predictions are set to zero, since a growth rate cannot be negative. This step is the only one to use the test set, which guarantees an unbiased estimate. It contributes to the workflow by providing the final performance reported in the README, and by revealing whether the errors are random or systematic (for example, whether high growth rates are consistently underestimated).
+### Candidate Models
+
+I define two model families as scikit-learn pipelines. The polynomial model standardizes the four features, expands them into powers and interaction terms, and fits a linear regression on those terms. The k-nearest neighbors (k-NN) model standardizes the features and averages the growth rates of the closest training samples. Putting the scaler inside the pipeline means it is refit on the training part of each cross-validation fold, so validation samples never leak into preprocessing. Standardizing also puts temperature (30 to 42 °C) and lactate (0 to 40 mM) on comparable scales, which matters for distances and makes the polynomial weights comparable.
+
+### Hyperparameter Tuning
+
+Some settings cannot be learned from the data: the polynomial degree (1 to 10) and, for k-NN, the number of neighbors (1 to 40) and the weighting (uniform or distance-based). I use a grid search with 4-fold cross-validation on the training set, scored by root mean square error (RMSE). I also record the training error, because a large gap between training and validation error signals overfitting. Separate searches are run for a linear model, the polynomial family, and each k-NN weighting, so every alternative is compared at its own best settings. This step gives each family its best hyperparameters and a validation error to compare.
+
+### Model Comparison and Selection
+
+I compare the tuned models with a baseline that always predicts the mean growth rate, which shows how much error the models actually remove. The selection rule is fixed in advance: the model with the lowest validation RMSE wins, unless the polynomial is within one standard deviation of it, in which case I keep the polynomial because it is simpler and its weights can be read directly. Setting the rule before looking at the test set keeps the choice reproducible and stops the test data from influencing it.
+
+### Learning Curves
+
+To see whether more experiments would help, I repeat the tuning on random subsets of growing size, from 60 samples to the full dataset, each with its own split and grid search. This step does not influence model selection. It tells me whether the amount of data is the bottleneck.
+
+### Evaluation on the Test Set
+
+The selected model and its closest alternative are scored on the held-out samples with RMSE, mean absolute error, and R², and shown in a measured-versus-predicted plot and a residual plot. Negative predictions are set to zero because a growth rate cannot be negative. This is the only step that uses the test set, so it gives the performance I report, and the plots show whether the errors are random or systematic.
 
 ### Interpretation
 
-The selected model is then refitted on all 318 samples, so that every observation contributes to the final model. Its weights are exported: since the inputs are standardised, they are directly comparable, with squared terms signalling an optimum and cross terms signalling an interaction. For a view that is independent of the model type, each factor is varied over its observed range while the others are held at their mean, and this is done for both the polynomial and the k-NN model. The two-dimensional maps show the temperature–pH and glucose–lactate relationships. This step is necessary to turn a statistical model into usable biological knowledge. It contributes to the workflow by producing the weights and curves that feed the Analysis section of the README; the fact that two very different model families reach similar conclusions strengthens confidence in the interpretation.
+I then refit the selected model on all 318 samples so that every observation contributes. Because the inputs are standardized, its weights can be compared directly: squared terms point to an optimum and cross terms to an interaction. To compare with a model of a different type, I vary one factor at a time over its observed range while holding the others at their mean, for both the polynomial and the k-NN model, and I draw two-dimensional maps of temperature versus pH and glucose versus lactate. This turns a fitted model into something I can explain biologically.
 
-### Operating region and reliability
+### Operating Region and Reliability
 
-Finally, the program scans a four-dimensional grid of conditions to identify the highest and lowest predicted growth rates. A condition is only accepted if it is close to the training data, which is measured by the distance to its fifth-nearest sample compared with the typical distances observed in the dataset. The same boundary is drawn on the maps, and the residual error is reported for each quartile of each factor. This step is necessary to separate reliable predictions (interpolation) from dangerous extrapolations. It contributes to the workflow by turning the model from a simple curve fit into a practical guide, while explicitly specifying the zones where it should not be trusted.
-
+Finally, I search a four-dimensional grid of conditions for the highest and lowest predicted growth rates. A condition is kept only if it is close to the training data, measured by the distance to its fifth nearest sample compared with typical distances inside the dataset. The same boundary appears on the maps, and I report the error for each quartile of each factor. This separates interpolation from extrapolation and shows where the model should not be trusted.
 ## Analysis
 
 ### Dataset Overview
